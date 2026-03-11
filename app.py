@@ -54,19 +54,19 @@ def writer_node(state: AgentState):
     st.markdown(f"---")
     st.markdown(f"### ✍️ 正在撰写报告 (第 {current_iter} 次迭代)...")
     
-    # 使用 Spinner 显示加载状态，不进行高频 UI 刷新
-    with st.spinner("AI 正在深度思考并整合资料，请稍候..."):
+    # 💡 稳健模式：使用 spinner 提示，不再实时刷新 DOM
+    with st.spinner("AI 专家正在深度思考并整合资料，请稍候..."):
         prompt = f"""你是一名专业的分析师。
         课题：{state['topic']}
-        已搜集资料：{state['research_data']}
+        搜集资料：{state['research_data']}
         上轮审核意见：{state.get('revision_notes', '无')}
         任务：撰写深度报告。要求包含 Markdown 表格、2025年具体预测数据、执行摘要。"""
         
-        # 💡 改为 invoke (同步调用)，一次性获取结果，彻底避开 removeChild 错误
+        # 改为 invoke，一次性获取结果，彻底避开前端渲染冲突
         response = llm.invoke(prompt)
         full_content = response.content
     
-    # 撰写完成后，一次性渲染到网页
+    # 撰写完成后，直接显示全文
     st.markdown(full_content)
     
     return {"content": full_content, "iteration_count": current_iter}
