@@ -38,12 +38,27 @@ search_tool = TavilySearchResults(max_results=3, tavily_api_key=TAVILY_KEY)
 def search_node(state: AgentState):
     with st.status("🔍 正在联网搜集最新资料...", expanded=True) as status:
         try:
+            # 💡 必须先执行这一行获取搜索结果！
             results = search_tool.invoke({"query": state['topic']})
-            data_str = "\n".join([r['content'] for r in results])
+            
+            # 增加类型检查，防止非列表数据导致报错
+            if isinstance(results, list):
+                data_str = ""
+                for r in results:
+                    if isinstance(r, dict) and 'content' in r:
+                        data_str += r['content'] + "\n"
+                    else:
+                        data_str += str(r) + "\n"
+            else:
+                data_str = str(results)
+                st.warning(f"搜索接口返回了非标准数据：{data_str}")
+
             status.update(label="资料搜集完成！", state="complete", expanded=False)
         except Exception as e:
-            st.error(f"搜索出错: {e}")
-            data_str = "未搜寻到相关资料"
+            st.error(f"搜索组件发生异常: {e}")
+            data_str = f"搜索失败。错误详情: {e}"
+            status.update(label="搜集失败", state="error")
+            
     return {"research_data": data_str}
 
 # --- 节点 2: 撰写报告 (带抗抖动流式输出) ---
